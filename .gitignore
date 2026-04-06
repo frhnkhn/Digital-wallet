@@ -1,0 +1,22 @@
+# Compiled shared libraries
+*.so
+*.dylib
+*.o
+
+# Database
+database/*.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

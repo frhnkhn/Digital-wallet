@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — SmartWallet</title>
+  <meta name="description" content="Sign in to your SmartWallet account.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="logo-badge">💳</div>
+      <div>
+        <div style="font-weight:800;font-size:1.2rem;">SmartWallet</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);">Digital Wallet System</div>
+      </div>
+    </div>
+
+    <h1 class="auth-title">Welcome Back</h1>
+    <p class="auth-subtitle">Sign in to access your wallet</p>
+
+    <!-- Login Form -->
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="username" class="form-input"
+                 placeholder="Enter your username" autocomplete="username" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" class="form-input"
+                 placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+      </div>
+
+      <div id="errorMsg" style="display:none;margin-bottom:16px;padding:10px 14px;
+           background:var(--red-light);border:1px solid #fecaca;
+           border-radius:8px;color:var(--red);font-size:0.85rem;"></div>
+
+      <button type="submit" id="loginBtn" class="btn btn-primary btn-full" style="margin-top:8px;">
+        Sign In
+      </button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);">
+      Don't have an account?
+      <a href="/register.html" style="color:var(--accent);font-weight:600;">Create one free</a>
+    </p>
+
+    <!-- Sample Users hint -->
+    <div style="margin-top:24px;padding:14px;background:rgba(0,212,245,0.05);
+         border:1px solid rgba(0,212,245,0.15);border-radius:10px;">
+      <p style="font-size:0.72rem;color:var(--accent);font-weight:600;margin-bottom:8px;">
+        🧪 SAMPLE ACCOUNTS
+      </p>
+      <div style="font-size:0.75rem;color:var(--text-secondary);line-height:1.8;">
+        <code>alice</code> / <code>alice123</code> — User (PIN: 1234)<br>
+        <code>bob</code> / <code>bob123</code> — User<br>
+        <code>admin</code> / <code>admin123</code> — Admin
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Already logged in? Go to dashboard
+    Wallet.redirectIfAuth();
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn      = document.getElementById("loginBtn");
+      const errDiv   = document.getElementById("errorMsg");
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      errDiv.style.display = "none";
+      Wallet.btnLoading(btn, true);
+
+      const { ok, data } = await Wallet.apiFetch("/api/login", {
+        method: "POST",
+        body:   JSON.stringify({ username, password }),
+      });
+
+      Wallet.btnLoading(btn, false, "Sign In");
+
+      if (ok) {
+        showToast("Welcome back, " + data.username + "! 👋", "success");
+        setTimeout(() => {
+          window.location.href = data.role === "admin" ? "/admin.html" : "/dashboard.html";
+        }, 800);
+      } else {
+        errDiv.textContent     = data.error || "Login failed";
+        errDiv.style.display   = "block";
+        document.getElementById("password").value = "";
+      }
+    });
+  </script>
+</body>
+</html>

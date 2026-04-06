@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — SmartWallet</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <aside class="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo"><div class="logo-icon">💳</div><span>SmartWallet</span></a>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard">  <span class="nav-icon">🏠</span> Dashboard     </a>
+      <a href="/add_money.html"   class="nav-item" data-page="add_money">  <span class="nav-icon">➕</span> Add Money     </a>
+      <a href="/send_money.html"  class="nav-item" data-page="send_money"> <span class="nav-icon">📨</span> Send Money    </a>
+      <a href="/transactions.html" class="nav-item" data-page="transactions"><span class="nav-icon">📋</span> Transactions  </a>
+      <div class="nav-label">Admin</div>
+      <a href="/profile.html" class="nav-item" data-page="profile"><span class="nav-icon">👤</span> Profile</a>
+      <a href="/admin.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span> Admin Panel</a>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:0.8rem;font-weight:600;" id="sidebar-username">—</div>
+        <div style="font-size:0.7rem;color:var(--accent);" id="sidebar-role">Administrator</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);font-family:monospace;" id="sidebar-wallet-id">—</div>
+      </div>
+      <button class="nav-item" data-logout style="color:var(--red);">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>Admin Panel</h1>
+        <p class="page-subtitle">⚙️ System management and statistics</p>
+      </div>
+      <span class="badge badge-cyan">👑 Admin Access</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid fade-in" style="margin-bottom:28px;">
+      <div class="stat-card">
+        <span class="stat-icon">👥</span>
+        <div class="stat-value" id="statUsers">—</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📋</span>
+        <div class="stat-value" id="statTxns">—</div>
+        <div class="stat-label">Transactions</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">💰</span>
+        <div class="stat-value" id="statMoney">₹0</div>
+        <div class="stat-label">Total Money</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🚫</span>
+        <div class="stat-value" id="statBlocked" style="background:linear-gradient(135deg,#ff4545,#ff9800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">0</div>
+        <div class="stat-label">Blocked Users</div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card fade-in fade-in-delay-1" style="margin-bottom:24px;">
+      <h3 style="margin-bottom:16px;">👥 All Users</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Wallet ID</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" style="text-align:center;padding:24px;">
+              <div class="shimmer" style="height:16px;width:60%;margin:0 auto;"></div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <div class="card fade-in fade-in-delay-2">
+      <h3 style="margin-bottom:16px;">📋 Recent Transactions</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>From Wallet</th>
+              <th>To Wallet</th>
+              <th>Amount</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="txnsTableBody">
+            <tr><td colspan="7" style="text-align:center;padding:24px;">
+              <div class="shimmer" style="height:16px;width:60%;margin:0 auto;"></div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+let myAdminId = "";
+
+(async () => {
+  const me = await Wallet.requireAuth();
+  if (!me) return;
+  if (me.role !== "admin") {
+    showToast("Admin access required", "error");
+    setTimeout(() => window.location.href = "/dashboard.html", 1500);
+    return;
+  }
+  myAdminId = me.user_id;
+  Wallet.setActiveNav("admin");
+  Wallet.populateSidebar();
+
+  // Load stats
+  const stats = await Wallet.apiFetch("/api/admin/stats");
+  if (stats.ok) {
+    const s = stats.data;
+    document.getElementById("statUsers").textContent   = s.total_users;
+    document.getElementById("statTxns").textContent    = s.total_transactions;
+    document.getElementById("statMoney").textContent   = Wallet.formatCurrency(s.total_money);
+    document.getElementById("statBlocked").textContent = s.blocked_users;
+  }
+
+  // Load users
+  const users = await Wallet.apiFetch("/api/admin/users");
+  if (users.ok) renderUsers(users.data.users);
+
+  // Load transactions
+  const txns = await Wallet.apiFetch("/api/admin/transactions");
+  if (txns.ok) renderTxns(txns.data.transactions);
+})();
+
+function renderUsers(users) {
+  const tbody = document.getElementById("usersTableBody");
+  if (!users.length) {
+    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;color:var(--text-muted);'>No users found</td></tr>";
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const blocked    = u.is_blocked;
+    const statusBadge = blocked
+      ? `<span class="badge badge-red">Blocked</span>`
+      : `<span class="badge badge-green">Active</span>`;
+    const roleBadge = u.role === "admin"
+      ? `<span class="badge badge-cyan">Admin</span>`
+      : `<span class="badge badge-purple">User</span>`;
+    const actionBtn = u.role !== "admin"
+      ? blocked
+        ? `<button class="btn btn-success btn-sm" onclick="toggleBlock('${u.id}',false)">Unblock</button>`
+        : `<button class="btn btn-danger btn-sm"  onclick="toggleBlock('${u.id}',true)">Block</button>`
+      : `<span style="color:var(--text-muted);font-size:0.75rem;">—</span>`;
+
+    return `<tr>
+      <td><strong>${u.username}</strong></td>
+      <td style="color:var(--text-secondary);font-size:0.8rem;">${u.email}</td>
+      <td><code style="font-size:0.7rem;color:var(--accent);">${u.wallet_id}</code></td>
+      <td>${roleBadge}</td>
+      <td>${statusBadge}</td>
+      <td style="color:var(--text-secondary);font-size:0.75rem;">${Wallet.formatDate(u.created_at)}</td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderTxns(txns) {
+  const tbody = document.getElementById("txnsTableBody");
+  if (!txns.length) {
+    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;color:var(--text-muted);'>No transactions</td></tr>";
+    return;
+  }
+  tbody.innerHTML = txns.slice(0,50).map(t => {
+    const typeBadge = t.type === "CREDIT"
+      ? `<span class="badge badge-green">CREDIT</span>`
+      : `<span class="badge badge-red">DEBIT</span>`;
+    return `<tr>
+      <td><code style="font-size:0.7rem;">${t.id}</code></td>
+      <td><code style="font-size:0.7rem;color:var(--text-secondary);">${t.from_wallet_id.substring(0,12)}…</code></td>
+      <td><code style="font-size:0.7rem;color:var(--text-secondary);">${t.to_wallet_id.substring(0,12)}…</code></td>
+      <td><strong>${Wallet.formatCurrency(t.amount)}</strong></td>
+      <td>${typeBadge}</td>
+      <td><span class="badge badge-green">${t.status}</span></td>
+      <td style="color:var(--text-secondary);font-size:0.75rem;">${Wallet.formatDate(t.created_at)}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function toggleBlock(userId, block) {
+  const endpoint = block ? "/api/admin/block-user" : "/api/admin/unblock-user";
+  const { ok, data } = await Wallet.apiFetch(endpoint, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (ok) {
+    showToast(data.message, "success");
+    // Refresh user list
+    const users = await Wallet.apiFetch("/api/admin/users");
+    if (users.ok) renderUsers(users.data.users);
+    // Refresh stats
+    const stats = await Wallet.apiFetch("/api/admin/stats");
+    if (stats.ok) document.getElementById("statBlocked").textContent = stats.data.blocked_users;
+  } else {
+    showToast(data.error || "Action failed", "error");
+  }
+}
+</script>
+</body>
+</html>

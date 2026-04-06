@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction History — SmartWallet</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <aside class="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo"><div class="logo-icon">💳</div><span>SmartWallet</span></a>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard">  <span class="nav-icon">🏠</span> Dashboard     </a>
+      <a href="/add_money.html"   class="nav-item" data-page="add_money">  <span class="nav-icon">➕</span> Add Money     </a>
+      <a href="/send_money.html"  class="nav-item" data-page="send_money"> <span class="nav-icon">📨</span> Send Money    </a>
+      <a href="/transactions.html" class="nav-item" data-page="transactions"><span class="nav-icon">📋</span> Transactions  </a>
+      <div class="nav-label">Account</div>
+      <a href="/profile.html" class="nav-item" data-page="profile"><span class="nav-icon">👤</span> Profile</a>
+      <a href="/admin.html" class="nav-item admin-only" data-page="admin" style="display:none;"><span class="nav-icon">⚙️</span> Admin Panel</a>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:0.8rem;font-weight:600;" id="sidebar-username">—</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);" id="sidebar-role">Personal Wallet</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);font-family:monospace;" id="sidebar-wallet-id">—</div>
+      </div>
+      <button class="nav-item" data-logout style="color:var(--red);">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>Transaction History</h1>
+        <p class="page-subtitle">Your last 50 transactions</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="filterAll" class="btn btn-primary btn-sm">All</button>
+        <button id="filterIn"  class="btn btn-outline btn-sm">Money In</button>
+        <button id="filterOut" class="btn btn-outline btn-sm">Money Out</button>
+      </div>
+    </div>
+
+    <!-- Summary mini-cards -->
+    <div class="stats-grid fade-in" style="margin-bottom:24px;">
+      <div class="stat-card">
+        <span class="stat-icon">📊</span>
+        <div class="stat-value" id="totalTxns">0</div>
+        <div class="stat-label">Total Transactions</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">⬇️</span>
+        <div class="stat-value" id="totalIn" style="background:linear-gradient(135deg,#00e676,#00d4f5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">₹0</div>
+        <div class="stat-label">Money Received</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">⬆️</span>
+        <div class="stat-value" id="totalOut" style="background:linear-gradient(135deg,#ff4545,#ff9800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">₹0</div>
+        <div class="stat-label">Money Sent</div>
+      </div>
+    </div>
+
+    <!-- Transaction list -->
+    <div class="card fade-in fade-in-delay-1">
+      <div id="txnList">
+        <div class="shimmer" style="height:60px;margin-bottom:8px;"></div>
+        <div class="shimmer" style="height:60px;margin-bottom:8px;"></div>
+        <div class="shimmer" style="height:60px;margin-bottom:8px;"></div>
+        <div class="shimmer" style="height:60px;"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+let allTxns = [], myWalletId = "";
+let activeFilter = "all";
+
+(async () => {
+  const me = await Wallet.requireAuth();
+  if (!me) return;
+  myWalletId = me.wallet_id;
+  Wallet.setActiveNav("transactions");
+  Wallet.populateSidebar();
+
+  const { ok, data } = await Wallet.apiFetch("/api/transactions");
+  if (!ok) { document.getElementById("txnList").innerHTML = "<p style='color:var(--red)'>Failed to load transactions.</p>"; return; }
+
+  allTxns = data.transactions;
+  renderTxns(allTxns);
+
+  // Compute summary stats
+  let totalIn = 0, totalOut = 0;
+  allTxns.forEach(t => {
+    const isIn = (t.to_wallet_id === myWalletId && t.type === "CREDIT") || t.direction === "IN" || t.from_wallet_id === "SYSTEM";
+    if (isIn) totalIn += t.amount;
+    else       totalOut += t.amount;
+  });
+
+  document.getElementById("totalTxns").textContent = allTxns.length;
+  document.getElementById("totalIn").textContent   = Wallet.formatCurrency(totalIn);
+  document.getElementById("totalOut").textContent  = Wallet.formatCurrency(totalOut);
+})();
+
+function renderTxns(list) {
+  const container = document.getElementById("txnList");
+  if (!list.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><h3>No transactions</h3><p>Your transaction history will appear here.</p></div>`;
+    return;
+  }
+  container.innerHTML = `<div class="txn-list">${list.map(t => Wallet.renderTxn(t, myWalletId)).join("")}</div>`;
+}
+
+// Filters
+function setFilter(filter) {
+  activeFilter = filter;
+  document.querySelectorAll("[id^=filter]").forEach(b => b.className = "btn btn-outline btn-sm");
+  document.getElementById("filter" + filter.charAt(0).toUpperCase() + filter.slice(1)).className = "btn btn-primary btn-sm";
+
+  if (filter === "all") renderTxns(allTxns);
+  else if (filter === "in") {
+    renderTxns(allTxns.filter(t =>
+      (t.to_wallet_id === myWalletId && t.type === "CREDIT") || t.direction === "IN" || t.from_wallet_id === "SYSTEM"
+    ));
+  } else {
+    renderTxns(allTxns.filter(t =>
+      !((t.to_wallet_id === myWalletId && t.type === "CREDIT") || t.direction === "IN" || t.from_wallet_id === "SYSTEM")
+    ));
+  }
+}
+
+document.getElementById("filterAll").addEventListener("click", () => setFilter("all"));
+document.getElementById("filterIn").addEventListener("click",  () => setFilter("in"));
+document.getElementById("filterOut").addEventListener("click", () => setFilter("out"));
+</script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Money — SmartWallet</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo"><div class="logo-icon">💳</div><span>SmartWallet</span></a>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard">  <span class="nav-icon">🏠</span> Dashboard    </a>
+      <a href="/add_money.html"   class="nav-item" data-page="add_money">  <span class="nav-icon">➕</span> Add Money    </a>
+      <a href="/send_money.html"  class="nav-item" data-page="send_money"> <span class="nav-icon">📨</span> Send Money   </a>
+      <a href="/transactions.html" class="nav-item" data-page="transactions"><span class="nav-icon">📋</span> Transactions </a>
+      <div class="nav-label">Account</div>
+      <a href="/profile.html" class="nav-item" data-page="profile"><span class="nav-icon">👤</span> Profile</a>
+      <a href="/admin.html" class="nav-item admin-only" data-page="admin" style="display:none;"><span class="nav-icon">⚙️</span> Admin Panel</a>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:0.8rem;font-weight:600;" id="sidebar-username">—</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);" id="sidebar-role">Personal Wallet</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);font-family:monospace;" id="sidebar-wallet-id">—</div>
+      </div>
+      <button class="nav-item" data-logout style="color:var(--red);">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>Add Money</h1>
+        <p class="page-subtitle">Top up your wallet balance</p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+      <!-- Form -->
+      <div class="card fade-in">
+        <h3 style="margin-bottom:20px;">💰 Deposit Funds</h3>
+
+        <!-- Current Balance -->
+        <div style="background:var(--accent-light);border:1px solid var(--border);
+             border-radius:12px;padding:16px;margin-bottom:24px;text-align:center;">
+          <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:4px;">Current Balance</div>
+          <div id="currentBalance" style="font-size:1.8rem;font-weight:800;"
+               class="gradient-text">₹—</div>
+        </div>
+
+        <form id="addMoneyForm">
+          <div class="form-group">
+            <label class="form-label" for="amount">Amount (₹)</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">₹</span>
+              <input type="number" id="amount" class="form-input"
+                     placeholder="Enter amount" min="1" max="100000" step="0.01" required>
+            </div>
+          </div>
+
+          <!-- Quick amount buttons -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+            <button type="button" class="btn btn-outline btn-sm quick-amt" data-val="100">₹100</button>
+            <button type="button" class="btn btn-outline btn-sm quick-amt" data-val="500">₹500</button>
+            <button type="button" class="btn btn-outline btn-sm quick-amt" data-val="1000">₹1000</button>
+            <button type="button" class="btn btn-outline btn-sm quick-amt" data-val="5000">₹5000</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">Description (optional)</label>
+            <input type="text" id="description" class="form-input"
+                   placeholder="e.g. Bank transfer" value="Wallet top-up">
+          </div>
+
+          <div id="resultMsg" style="display:none;margin-bottom:16px;padding:12px 16px;
+               border-radius:10px;font-size:0.85rem;font-weight:500;"></div>
+
+          <button type="submit" id="addBtn" class="btn btn-primary btn-full">
+            ➕ Add Money
+          </button>
+        </form>
+      </div>
+
+      <!-- Info panel -->
+      <div class="fade-in fade-in-delay-1">
+        <div class="card" style="margin-bottom:16px;">
+          <h3 style="margin-bottom:12px;">ℹ️ About Adding Money</h3>
+          <ul style="font-size:0.85rem;color:var(--text-secondary);line-height:2;padding-left:16px;">
+            <li>Minimum deposit: ₹1</li>
+            <li>Maximum per transaction: ₹1,00,000</li>
+            <li>Balance updates instantly</li>
+            <li>Transaction ID issued immediately</li>
+            <li>Secured by C++ Wallet Engine</li>
+          </ul>
+        </div>
+        <div class="card card-glow">
+          <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-bottom:8px;">
+            🔧 TECHNOLOGY
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.7;">
+            This operation calls the <strong style="color:var(--text-primary)">C++ WalletEngine</strong>
+            via Python ctypes to credit your balance, then persists it to SQLite.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+let myWalletId = "";
+
+(async () => {
+  const me = await Wallet.requireAuth();
+  if (!me) return;
+  myWalletId = me.wallet_id;
+  Wallet.setActiveNav("add_money");
+  Wallet.populateSidebar();
+
+  // Load balance
+  const bal = await Wallet.apiFetch("/api/balance");
+  if (bal.ok) {
+    Wallet.animateNumber(document.getElementById("currentBalance"), bal.data.balance);
+  }
+})();
+
+// Quick amount buttons
+document.querySelectorAll(".quick-amt").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.getElementById("amount").value = btn.dataset.val;
+  });
+});
+
+// Submit
+document.getElementById("addMoneyForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn    = document.getElementById("addBtn");
+  const resDiv = document.getElementById("resultMsg");
+  const amount = parseFloat(document.getElementById("amount").value);
+  const desc   = document.getElementById("description").value;
+
+  resDiv.style.display = "none";
+  Wallet.btnLoading(btn, true);
+
+  const { ok, data } = await Wallet.apiFetch("/api/add-money", {
+    method: "POST",
+    body: JSON.stringify({ amount, description: desc }),
+  });
+
+  Wallet.btnLoading(btn, false, "➕ Add Money");
+
+  if (ok) {
+    resDiv.style.cssText = "display:block;background:var(--green-light);border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;font-size:0.85rem;font-weight:500;color:var(--green);margin-bottom:16px;";
+    resDiv.innerHTML = `${data.message}<br><span style="font-size:0.75rem;opacity:0.8;">New Balance: ${Wallet.formatCurrency(data.new_balance)} | TXN: ${data.txn_id}</span>`;
+    Wallet.animateNumber(document.getElementById("currentBalance"), data.new_balance);
+    document.getElementById("amount").value = "";
+    showToast(data.message, "success");
+  } else {
+    resDiv.style.cssText = "display:block;background:var(--red-light);border:1px solid #fecaca;border-radius:10px;padding:12px 16px;font-size:0.85rem;font-weight:500;color:var(--red);margin-bottom:16px;";
+    resDiv.textContent = data.error || "Failed to add money";
+    showToast(data.error, "error");
+  }
+});
+</script>
+</body>
+</html>

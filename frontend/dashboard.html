@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — SmartWallet</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="logo-icon">💳</div>
+      <span>SmartWallet</span>
+    </a>
+
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard">   <span class="nav-icon">🏠</span> Dashboard     </a>
+      <a href="/add_money.html"   class="nav-item" data-page="add_money">   <span class="nav-icon">➕</span> Add Money     </a>
+      <a href="/send_money.html"  class="nav-item" data-page="send_money">  <span class="nav-icon">📨</span> Send Money    </a>
+      <a href="/transactions.html" class="nav-item" data-page="transactions"><span class="nav-icon">📋</span> Transactions  </a>
+
+      <div class="nav-label">Account</div>
+      <a href="/profile.html" class="nav-item" data-page="profile"><span class="nav-icon">👤</span> Profile</a>
+      <a href="/admin.html" class="nav-item admin-only" data-page="admin" style="display:none;"><span class="nav-icon">⚙️</span> Admin Panel</a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:0.8rem;font-weight:600;" id="sidebar-username">—</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);" id="sidebar-role">Personal Wallet</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);font-family:monospace;margin-top:2px;" id="sidebar-wallet-id">—</div>
+      </div>
+      <button class="nav-item btn-danger" data-logout style="color:var(--red);">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p class="page-subtitle">👋 Welcome back, <span id="welcomeName">—</span></p>
+      </div>
+      <span id="lib-status" class="badge badge-purple" style="font-size:0.7rem;">Loading...</span>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="balance-card fade-in" style="margin-bottom:24px;">
+      <div class="balance-label">💰 TOTAL BALANCE</div>
+      <div class="balance-amount">
+        <span class="balance-currency">₹</span><span id="balanceVal">—</span>
+      </div>
+      <div class="balance-wallet-id">Wallet ID: <span id="walletId">—</span></div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions fade-in fade-in-delay-1" style="margin-bottom:32px;">
+      <a href="/add_money.html" class="action-btn">
+        <div class="action-icon">➕</div>
+        Add Money
+      </a>
+      <a href="/send_money.html" class="action-btn">
+        <div class="action-icon">📨</div>
+        Send Money
+      </a>
+      <a href="/transactions.html" class="action-btn">
+        <div class="action-icon">📋</div>
+        History
+      </a>
+      <a href="/profile.html" class="action-btn">
+        <div class="action-icon">👤</div>
+        Profile
+      </a>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card fade-in fade-in-delay-2">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h3>Recent Transactions</h3>
+        <a href="/transactions.html" style="font-size:0.8rem;color:var(--accent);">View all →</a>
+      </div>
+      <div id="recentTxns">
+        <div class="shimmer" style="height:48px;margin-bottom:8px;"></div>
+        <div class="shimmer" style="height:48px;margin-bottom:8px;"></div>
+        <div class="shimmer" style="height:48px;"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+(async () => {
+  const me = await Wallet.requireAuth();
+  if (!me) return;
+
+  Wallet.setActiveNav("dashboard");
+  Wallet.populateSidebar();
+  document.getElementById("welcomeName").textContent = me.username;
+  document.getElementById("walletId").textContent    = me.wallet_id;
+
+  // Check C++ engine status
+  const health = await Wallet.apiFetch("/api/health");
+  const libEl  = document.getElementById("lib-status");
+  if (health.data.libs_loaded) {
+    libEl.textContent  = "✅ C++ Engine Active";
+    libEl.className    = "badge badge-green";
+  } else {
+    libEl.textContent  = "⚠️ Python-only mode";
+    libEl.className    = "badge badge-purple";
+  }
+
+  // Load balance
+  const bal = await Wallet.apiFetch("/api/balance");
+  if (bal.ok) {
+    const amountEl = document.getElementById("balanceVal");
+    Wallet.animateNumber(amountEl, bal.data.balance, "");
+  }
+
+  // Load recent transactions
+  const txns = await Wallet.apiFetch("/api/transactions");
+  const container = document.getElementById("recentTxns");
+  if (txns.ok && txns.data.transactions.length > 0) {
+    const recent = txns.data.transactions.slice(0, 5);
+    container.innerHTML = recent.map(t => Wallet.renderTxn(t, me.wallet_id)).join("");
+  } else {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No transactions yet</h3>
+        <p>Add money or send to get started</p>
+      </div>`;
+  }
+})();
+</script>
+</body>
+</html>

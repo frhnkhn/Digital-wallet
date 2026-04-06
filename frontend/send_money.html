@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Money — SmartWallet</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <aside class="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo"><div class="logo-icon">💳</div><span>SmartWallet</span></a>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/dashboard.html"   class="nav-item" data-page="dashboard">  <span class="nav-icon">🏠</span> Dashboard     </a>
+      <a href="/add_money.html"   class="nav-item" data-page="add_money">  <span class="nav-icon">➕</span> Add Money     </a>
+      <a href="/send_money.html"  class="nav-item" data-page="send_money"> <span class="nav-icon">📨</span> Send Money    </a>
+      <a href="/transactions.html" class="nav-item" data-page="transactions"><span class="nav-icon">📋</span> Transactions  </a>
+      <div class="nav-label">Account</div>
+      <a href="/profile.html" class="nav-item" data-page="profile"><span class="nav-icon">👤</span> Profile</a>
+      <a href="/admin.html" class="nav-item admin-only" data-page="admin" style="display:none;"><span class="nav-icon">⚙️</span> Admin Panel</a>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:0.8rem;font-weight:600;" id="sidebar-username">—</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);" id="sidebar-role">Personal Wallet</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);font-family:monospace;" id="sidebar-wallet-id">—</div>
+      </div>
+      <button class="nav-item" data-logout style="color:var(--red);">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>Send Money</h1>
+        <p class="page-subtitle">Transfer funds to another wallet instantly</p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+      <div class="card fade-in">
+        <h3 style="margin-bottom:20px;">📨 Transfer Details</h3>
+
+        <!-- Balance indicator -->
+        <div style="background:var(--accent-light);border:1px solid var(--border);
+             border-radius:12px;padding:14px 18px;margin-bottom:24px;
+             display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-secondary);">Available Balance</div>
+            <div id="myBalance" style="font-weight:800;font-size:1.2rem;" class="gradient-text">₹—</div>
+          </div>
+          <span style="font-size:1.5rem;">💳</span>
+        </div>
+
+        <form id="sendForm">
+          <div class="form-group">
+            <label class="form-label" for="recipient">Recipient (username or wallet ID)</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">👤</span>
+              <input type="text" id="recipient" class="form-input"
+                     placeholder="e.g. bob or wallet ID" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="amount">Amount (₹)</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">₹</span>
+              <input type="number" id="amount" class="form-input"
+                     placeholder="Amount to send" min="1" step="0.01" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">Description (optional)</label>
+            <input type="text" id="description" class="form-input"
+                   placeholder="e.g. Lunch, Rent..." value="Money transfer">
+          </div>
+
+          <!-- PIN field (shown if user has PIN) -->
+          <div class="form-group" id="pinGroup" style="display:none;">
+            <label class="form-label" for="pin">PIN <span style="color:var(--red);">*</span></label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">🔐</span>
+              <input type="password" id="pin" class="form-input"
+                     placeholder="4-digit PIN" maxlength="4" pattern="[0-9]{4}">
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">
+              Your PIN is required for transfers
+            </div>
+          </div>
+
+          <div id="resultMsg" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:10px;font-size:0.85rem;"></div>
+
+          <button type="submit" id="sendBtn" class="btn btn-primary btn-full">
+            📨 Send Money
+          </button>
+        </form>
+      </div>
+
+      <!-- Tips -->
+      <div class="fade-in fade-in-delay-1">
+        <div class="card" style="margin-bottom:16px;">
+          <h3 style="margin-bottom:12px;">💡 How to Send</h3>
+          <ol style="font-size:0.85rem;color:var(--text-secondary);line-height:2;padding-left:16px;">
+            <li>Enter the recipient's <strong style="color:var(--text-primary)">username</strong> or their 16-char <strong style="color:var(--text-primary)">wallet ID</strong></li>
+            <li>Enter the amount to transfer</li>
+            <li>Enter your PIN if you've set one</li>
+            <li>Click Send and it's instant!</li>
+          </ol>
+        </div>
+
+        <div class="card card-glow">
+          <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-bottom:8px;">🔧 UNDER THE HOOD</div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.7;">
+            The Python backend calls <code style="color:var(--accent);">wallet_transfer()</code> in
+            <strong style="color:var(--text-primary)">libwallet.so</strong> (C++ engine).
+            PIN is verified via <code style="color:var(--accent);">verify_pin()</code> in
+            <strong style="color:var(--text-primary)">libsecurity.so</strong> (C module).
+          </div>
+        </div>
+
+        <!-- Sample accounts -->
+        <div class="card" style="margin-top:16px;">
+          <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-bottom:8px;">🧪 TRY SENDING TO</div>
+          <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.8;">
+            <code>alice</code> — ₹1,500 balance<br>
+            <code>bob</code> — ₹800 balance<br>
+            <code>charlie</code> — ₹250 balance
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+(async () => {
+  const me = await Wallet.requireAuth();
+  if (!me) return;
+  Wallet.setActiveNav("send_money");
+  Wallet.populateSidebar();
+
+  // Load balance
+  const bal = await Wallet.apiFetch("/api/balance");
+  if (bal.ok) Wallet.animateNumber(document.getElementById("myBalance"), bal.data.balance);
+
+  // Check if user has PIN
+  const profile = await Wallet.apiFetch("/api/profile");
+  if (profile.ok && profile.data.has_pin) {
+    document.getElementById("pinGroup").style.display = "block";
+  }
+})();
+
+document.getElementById("sendForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn       = document.getElementById("sendBtn");
+  const resDiv    = document.getElementById("resultMsg");
+  const recipient = document.getElementById("recipient").value.trim();
+  const amount    = parseFloat(document.getElementById("amount").value);
+  const desc      = document.getElementById("description").value;
+  const pin       = document.getElementById("pin").value;
+
+  resDiv.style.display = "none";
+  Wallet.btnLoading(btn, true);
+
+  const { ok, data } = await Wallet.apiFetch("/api/send-money", {
+    method: "POST",
+    body: JSON.stringify({ recipient, amount, description: desc, pin }),
+  });
+
+  Wallet.btnLoading(btn, false, "📨 Send Money");
+
+  if (ok) {
+    resDiv.style.cssText = "display:block;background:var(--green-light);border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;font-size:0.85rem;font-weight:500;color:var(--green);margin-bottom:16px;";
+    resDiv.innerHTML = `${data.message}<br><span style="font-size:0.75rem;opacity:0.8;">New Balance: ${Wallet.formatCurrency(data.new_balance)} | TXN: ${data.txn_id}</span>`;
+    Wallet.animateNumber(document.getElementById("myBalance"), data.new_balance);
+    document.getElementById("amount").value = "";
+    document.getElementById("pin").value = "";
+    showToast(data.message, "success");
+  } else {
+    resDiv.style.cssText = "display:block;background:var(--red-light);border:1px solid #fecaca;border-radius:10px;padding:12px 16px;font-size:0.85rem;font-weight:500;color:var(--red);margin-bottom:16px;";
+    resDiv.textContent = data.error || "Transfer failed";
+    showToast(data.error, "error");
+  }
+});
+</script>
+</body>
+</html>

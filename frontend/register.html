@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — SmartWallet</title>
+  <meta name="description" content="Create your free SmartWallet account.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-badge">💳</div>
+      <div>
+        <div style="font-weight:800;font-size:1.2rem;">SmartWallet</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);">Digital Wallet System</div>
+      </div>
+    </div>
+
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-subtitle">Get your digital wallet in seconds</p>
+
+    <form id="regForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="username" class="form-input"
+                 placeholder="Minimum 3 characters" autocomplete="username" required minlength="3">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">📧</span>
+          <input type="email" id="email" class="form-input"
+                 placeholder="you@example.com" autocomplete="email" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" class="form-input"
+                 placeholder="Minimum 6 characters" autocomplete="new-password" required minlength="6">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirmPass">Confirm Password</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">🔑</span>
+          <input type="password" id="confirmPass" class="form-input"
+                 placeholder="Re-enter password" autocomplete="new-password" required>
+        </div>
+      </div>
+
+      <div id="errorMsg" style="display:none;margin-bottom:16px;padding:10px 14px;
+           background:var(--red-light);border:1px solid #fecaca;
+           border-radius:8px;color:var(--red);font-size:0.85rem;"></div>
+
+      <div id="successMsg" style="display:none;margin-bottom:16px;padding:10px 14px;
+           background:var(--green-light);border:1px solid #bbf7d0;
+           border-radius:8px;color:var(--green);font-size:0.85rem;"></div>
+
+      <button type="submit" id="regBtn" class="btn btn-primary btn-full" style="margin-top:8px;">
+        Create Wallet
+      </button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);">
+      Already have an account?
+      <a href="/login.html" style="color:var(--accent);font-weight:600;">Sign in</a>
+    </p>
+
+    <!-- What you get -->
+    <div style="margin-top:24px;padding:14px;background:rgba(130,80,255,0.05);
+                border:1px solid rgba(130,80,255,0.15);border-radius:10px;">
+      <p style="font-size:0.72rem;color:var(--accent);font-weight:600;margin-bottom:8px;">
+        ✨ WHAT YOU GET
+      </p>
+      <div style="font-size:0.75rem;color:var(--text-secondary);line-height:1.8;">
+        🆔 Unique Wallet ID &nbsp;·&nbsp;
+        💰 Instant top-up &nbsp;·&nbsp;
+        📨 Send &amp; receive &nbsp;·&nbsp;
+        📊 Full history
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    Wallet.redirectIfAuth();
+
+    document.getElementById("regForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn       = document.getElementById("regBtn");
+      const errDiv    = document.getElementById("errorMsg");
+      const sucDiv    = document.getElementById("successMsg");
+      const username  = document.getElementById("username").value.trim();
+      const email     = document.getElementById("email").value.trim();
+      const password  = document.getElementById("password").value;
+      const confirm   = document.getElementById("confirmPass").value;
+
+      errDiv.style.display = sucDiv.style.display = "none";
+
+      if (password !== confirm) {
+        errDiv.textContent = "Passwords do not match";
+        errDiv.style.display = "block";
+        return;
+      }
+
+      Wallet.btnLoading(btn, true);
+      const { ok, data } = await Wallet.apiFetch("/api/register", {
+        method: "POST",
+        body:   JSON.stringify({ username, email, password }),
+      });
+      Wallet.btnLoading(btn, false, "Create Wallet");
+
+      if (ok) {
+        sucDiv.innerHTML = `🎉 Account created! Your wallet ID: <strong style="font-family:monospace;">${data.wallet_id}</strong>`;
+        sucDiv.style.display = "block";
+        showToast("Wallet created! Redirecting...", "success");
+        setTimeout(() => window.location.href = "/login.html", 2000);
+      } else {
+        errDiv.textContent   = data.error || "Registration failed";
+        errDiv.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>
