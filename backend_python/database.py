@@ -12,7 +12,11 @@ import sqlite3
 import os
 
 # Path to the database file
-_DB_DIR  = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "database"))
+# On Vercel the filesystem is read-only except /tmp
+if os.environ.get("VERCEL"):
+    _DB_DIR = "/tmp"
+else:
+    _DB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "database"))
 DB_PATH  = os.path.join(_DB_DIR, "wallet.db")
 
 
