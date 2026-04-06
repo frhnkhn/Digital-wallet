@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: smart-digital-wallet
+    runtime: python
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: cd backend_python && gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.4"

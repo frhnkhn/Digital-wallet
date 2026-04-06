@@ -28,8 +28,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = 86400  # 24 hours
 
-CORS(app, supports_credentials=True, origins=["http://127.0.0.1:5000",
-                                               "http://localhost:5000"])
+CORS(app, supports_credentials=True, origins="*")
 
 # ── Database init ─────────────────────────────────────────────────────────────
 from database import init_db, get_all_wallets
