@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Health Score — SmartWallet</title>
+  <meta name="description" content="Your personalised Financial Health Score based on savings rate, balance stability, jar activity, and spending discipline.">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/health.css">
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="logo-icon">💳</div><span>SmartWallet</span>
+    </a>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/dashboard.html"    class="nav-item" data-page="dashboard">   <span class="nav-icon">🏠</span> Dashboard    </a>
+      <a href="/add_money.html"    class="nav-item" data-page="add_money">   <span class="nav-icon">➕</span> Add Money    </a>
+      <a href="/send_money.html"   class="nav-item" data-page="send_money">  <span class="nav-icon">📨</span> Send Money   </a>
+      <a href="/transactions.html" class="nav-item" data-page="transactions"><span class="nav-icon">📋</span> Transactions </a>
+      <a href="/jars.html"         class="nav-item" data-page="jars">        <span class="nav-icon">🫙</span> My Jars      </a>
+      <a href="/health.html"       class="nav-item" data-page="health">      <span class="nav-icon">❤️</span> Health Score </a>
+
+      <div class="nav-label">Account</div>
+      <a href="/profile.html" class="nav-item" data-page="profile"><span class="nav-icon">👤</span> Profile</a>
+      <a href="/admin.html" class="nav-item admin-only" data-page="admin" style="display:none;"><span class="nav-icon">⚙️</span> Admin Panel</a>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:0.8rem;font-weight:600;" id="sidebar-username">—</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);" id="sidebar-role">Personal Wallet</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);font-family:monospace;" id="sidebar-wallet-id">—</div>
+      </div>
+      <button class="nav-item" data-logout style="color:var(--red);">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>❤️ Financial Health Score</h1>
+        <p class="page-subtitle">A live snapshot of your money habits — savings, stability, and discipline.</p>
+      </div>
+      <button id="refreshBtn" class="btn btn-outline" onclick="loadHealthScore()">
+        🔄 Refresh
+      </button>
+    </div>
+
+    <!-- ── Hero: Gauge + Meta tiles ── -->
+    <div class="health-hero fade-in">
+
+      <!-- Animated arc gauge -->
+      <div class="gauge-card" id="gaugeCard">
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 200 110">
+            <!-- Track -->
+            <path class="gauge-track"
+              d="M 20 100 A 80 80 0 0 1 180 100"
+              stroke-dasharray="251" stroke-dashoffset="0"/>
+            <!-- Fill — animated by JS -->
+            <path class="gauge-fill" id="gaugeFill"
+              d="M 20 100 A 80 80 0 0 1 180 100"
+              stroke="#6366f1"
+              stroke-dasharray="251" stroke-dashoffset="251"/>
+          </svg>
+          <div class="gauge-score-wrap">
+            <div class="gauge-score-num" id="gaugeNum" style="color:#6366f1;">—</div>
+            <div class="gauge-score-max">out of 100</div>
+          </div>
+        </div>
+
+        <div class="grade-badge" id="gradeBadge" style="background:#eef2ff;color:#6366f1;">
+          <span id="gradeIcon">⏳</span>
+          <span id="gradeText">Calculating…</span>
+        </div>
+
+        <div class="score-descriptor" id="scoreDesc">
+          Loading your financial health data…
+        </div>
+      </div>
+
+      <!-- Meta tiles -->
+      <div class="health-meta-grid fade-in fade-in-delay-1">
+        <div class="meta-tile">
+          <span class="tile-icon">💳</span>
+          <div class="tile-val" id="metaBalance">₹—</div>
+          <div class="tile-lbl">Wallet Balance</div>
+        </div>
+        <div class="meta-tile">
+          <span class="tile-icon">🫙</span>
+          <div class="tile-val" id="metaJarSaved">₹—</div>
+          <div class="tile-lbl">Total in Jars</div>
+        </div>
+        <div class="meta-tile">
+          <span class="tile-icon">📦</span>
+          <div class="tile-val" id="metaJarCount">—</div>
+          <div class="tile-lbl">Active Jars</div>
+        </div>
+        <div class="meta-tile">
+          <span class="tile-icon">📊</span>
+          <div class="tile-val" id="metaTxnCount">—</div>
+          <div class="tile-lbl">Transactions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Component Breakdown ── -->
+    <div style="margin-bottom:14px;">
+      <h3 style="font-size:0.85rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.08em;">Score Breakdown</h3>
+    </div>
+    <div class="components-grid fade-in fade-in-delay-1" id="componentsGrid">
+      <!-- shimmer placeholders -->
+      <div class="health-shimmer" style="height:78px;"></div>
+      <div class="health-shimmer" style="height:78px;"></div>
+      <div class="health-shimmer" style="height:78px;"></div>
+      <div class="health-shimmer" style="height:78px;"></div>
+      <div class="health-shimmer" style="height:78px;"></div>
+    </div>
+
+    <!-- ── Tips ── -->
+    <div class="tips-section fade-in fade-in-delay-1" id="tipsSection" style="display:none;">
+      <div class="tips-title">💡 Personalised Tips</div>
+      <div id="tipsList"></div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Financial Health Score Page Logic
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Arc gauge constants
+const GAUGE_CIRCUMFERENCE = 251; // half-circle path ~π×r = π×80
+
+const SCORE_DESCRIPTIONS = {
+  Excellent: "You're in outstanding financial shape. Keep it up — you're a money role model!",
+  Good:      "Your finances are in great health. A few tweaks could push you to Excellent.",
+  Fair:      "You're on the right track, but there's room to improve. Focus on saving more.",
+  Poor:      "Your score needs attention. Start with a small jar and consistent top-ups.",
+  Critical:  "Immediate attention needed. Add money, create a jar, and build healthy habits.",
+};
+
+const COMP_COLORS = {
+  savings:    "#6366f1",
+  stability:  "#22c55e",
+  jars:       "#f59e0b",
+  discipline: "#0ea5e9",
+  activity:   "#db2777",
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async () => {
+  const me = await Wallet.requireAuth();
+  if (!me) return;
+  Wallet.setActiveNav("health");
+  Wallet.populateSidebar();
+  await loadHealthScore();
+})();
+
+async function loadHealthScore() {
+  const btn = document.getElementById("refreshBtn");
+  btn.disabled = true;
+
+  const { ok, data } = await Wallet.apiFetch("/api/health-score");
+
+  btn.disabled = false;
+
+  if (!ok) {
+    showToast("Failed to load health score", "error");
+    return;
+  }
+
+  renderGauge(data);
+  renderMeta(data.meta);
+  renderComponents(data.components);
+  renderTips(data.components);
+}
+
+// ── Gauge ─────────────────────────────────────────────────────────────────────
+function renderGauge(data) {
+  const score   = data.score;
+  const color   = data.color;
+  const fill    = document.getElementById("gaugeFill");
+  const numEl   = document.getElementById("gaugeNum");
+  const badge   = document.getElementById("gradeBadge");
+  const icon    = document.getElementById("gradeIcon");
+  const gradeT  = document.getElementById("gradeText");
+  const descEl  = document.getElementById("scoreDesc");
+
+  // Animate arc
+  const offset  = GAUGE_CIRCUMFERENCE - (score / 100) * GAUGE_CIRCUMFERENCE;
+  fill.style.stroke = color;
+  // Small delay so CSS transition fires after paint
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fill.style.strokeDashoffset = offset;
+    });
+  });
+
+  // Animate number counter
+  animateScore(numEl, score, color);
+
+  // Grade badge
+  badge.style.background = hexToAlpha(color, 0.12);
+  badge.style.color       = color;
+  icon.textContent        = data.icon;
+  gradeT.textContent      = data.grade;
+
+  // Description
+  descEl.textContent = SCORE_DESCRIPTIONS[data.grade] || "";
+}
+
+function animateScore(el, target, color) {
+  el.style.color = color;
+  let current = 0;
+  const duration = 1200;
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    current = Math.round(ease * target);
+    el.textContent = current;
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(tick);
+}
+
+function hexToAlpha(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ── Meta tiles ────────────────────────────────────────────────────────────────
+function renderMeta(meta) {
+  document.getElementById("metaBalance").textContent  = Wallet.formatCurrency(meta.wallet_balance);
+  document.getElementById("metaJarSaved").textContent = Wallet.formatCurrency(meta.total_jar_saved);
+  document.getElementById("metaJarCount").textContent = meta.jar_count;
+  document.getElementById("metaTxnCount").textContent = meta.total_txns;
+}
+
+// ── Components ────────────────────────────────────────────────────────────────
+function renderComponents(components) {
+  const grid = document.getElementById("componentsGrid");
+
+  grid.innerHTML = components.map(c => {
+    const color   = COMP_COLORS[c.key] || "#6366f1";
+    const pct     = Math.round((c.points / c.max) * 100);
+    const dotStyle = `background:${color};`;
+    return `
+    <div class="component-card">
+      <div class="comp-icon-wrap">${c.icon}</div>
+      <div class="comp-info">
+        <div class="comp-label">
+          ${c.label}
+        </div>
+        <div class="comp-detail">${c.detail}</div>
+        <div class="comp-bar-wrap">
+          <div class="comp-bar-fill" data-pct="${pct}" style="background:${color};"></div>
+        </div>
+      </div>
+      <div class="comp-score" style="color:${color};">
+        ${c.points}<span class="comp-max">/${c.max}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Trigger bar animations after next paint
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      grid.querySelectorAll(".comp-bar-fill").forEach(bar => {
+        bar.style.width = bar.dataset.pct + "%";
+      });
+    });
+  });
+}
+
+// ── Tips ──────────────────────────────────────────────────────────────────────
+function renderTips(components) {
+  const section = document.getElementById("tipsSection");
+  const list    = document.getElementById("tipsList");
+
+  const tips = components.map(c => ({
+    tip: c.tip,
+    color: COMP_COLORS[c.key] || "#6366f1",
+    label: c.label,
+  }));
+
+  list.innerHTML = tips.map(t => `
+    <div class="tip-item">
+      <div class="tip-dot" style="background:${t.color};"></div>
+      <div class="tip-text"><strong>${t.label}:</strong> ${t.tip}</div>
+    </div>`).join("");
+
+  section.style.display = "block";
+}
+</script>
+</body>
+</html>

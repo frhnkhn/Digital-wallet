@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Money Jars — SmartWallet</title>
+  <meta name="description" content="Smart Money Jars — goal-based visual savings pots. Lock money toward your dreams.">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/jars.css">
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <a href="/dashboard.html" class="sidebar-logo">
+      <div class="logo-icon">💳</div><span>SmartWallet</span>
+    </a>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/dashboard.html"    class="nav-item" data-page="dashboard">   <span class="nav-icon">🏠</span> Dashboard    </a>
+      <a href="/add_money.html"    class="nav-item" data-page="add_money">   <span class="nav-icon">➕</span> Add Money    </a>
+      <a href="/send_money.html"   class="nav-item" data-page="send_money">  <span class="nav-icon">📨</span> Send Money   </a>
+      <a href="/transactions.html" class="nav-item" data-page="transactions"><span class="nav-icon">📋</span> Transactions </a>
+      <a href="/jars.html"         class="nav-item" data-page="jars">        <span class="nav-icon">🫙</span> My Jars      </a>
+      <a href="/health.html"       class="nav-item" data-page="health">      <span class="nav-icon">❤️</span> Health Score </a>
+
+      <div class="nav-label">Account</div>
+      <a href="/profile.html" class="nav-item" data-page="profile"><span class="nav-icon">👤</span> Profile</a>
+      <a href="/admin.html" class="nav-item admin-only" data-page="admin" style="display:none;"><span class="nav-icon">⚙️</span> Admin Panel</a>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="padding:0 12px 12px;">
+        <div style="font-size:0.8rem;font-weight:600;" id="sidebar-username">—</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);" id="sidebar-role">Personal Wallet</div>
+        <div style="font-size:0.65rem;color:var(--text-muted);font-family:monospace;" id="sidebar-wallet-id">—</div>
+      </div>
+      <button class="nav-item" data-logout style="color:var(--red);">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1>🫙 My Money Jars</h1>
+        <p class="page-subtitle">Lock money toward your goals. Watch your dreams fill up.</p>
+      </div>
+      <button id="openCreateModal" class="btn btn-primary">
+        <span>＋</span> New Jar
+      </button>
+    </div>
+
+    <!-- Overview stats -->
+    <div class="stats-grid fade-in" style="margin-bottom:28px;" id="jarsStats">
+      <div class="stat-card">
+        <span class="stat-icon">🫙</span>
+        <div class="stat-value" id="statJarCount">—</div>
+        <div class="stat-label">Active Jars</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">💰</span>
+        <div class="stat-value" id="statTotalSaved" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">₹0</div>
+        <div class="stat-label">Total Saved in Jars</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">💳</span>
+        <div class="stat-value" id="statSpendable" style="background:linear-gradient(135deg,#22c55e,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">₹0</div>
+        <div class="stat-label">Spendable Balance</div>
+      </div>
+    </div>
+
+    <!-- Jar grid -->
+    <div id="jarGrid" class="jar-grid fade-in fade-in-delay-1">
+      <!-- Shimmer placeholders -->
+      <div class="jar-card shimmer" style="height:320px;"></div>
+      <div class="jar-card shimmer" style="height:320px;"></div>
+      <div class="jar-card shimmer" style="height:320px;"></div>
+    </div>
+
+    <!-- Empty state (hidden by default) -->
+    <div id="emptyJars" class="empty-state" style="display:none;">
+      <div class="empty-icon">🫙</div>
+      <h3>No Jars yet</h3>
+      <p>Create your first Money Jar to start saving toward a goal!</p>
+      <button class="btn btn-primary" onclick="document.getElementById('openCreateModal').click()" style="margin-top:16px;">
+        ＋ Create First Jar
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ════════════════════════ CREATE JAR MODAL ════════════════════════ -->
+<div id="createModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>🫙 Create New Money Jar</h2>
+      <button class="modal-close" id="closeCreateModal">✕</button>
+    </div>
+
+    <form id="createJarForm">
+      <!-- Emoji + Name row -->
+      <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:18px;">
+        <div>
+          <label class="form-label">Emoji</label>
+          <div class="emoji-picker" id="emojiDisplay">🫙</div>
+          <input type="hidden" id="jarEmoji" value="🫙">
+        </div>
+        <div style="flex:1;">
+          <label class="form-label" for="jarName">Jar Name</label>
+          <input type="text" id="jarName" class="form-input" placeholder="e.g. Goa Vacation" maxlength="40" required>
+        </div>
+      </div>
+
+      <!-- Emoji options -->
+      <div class="emoji-options" id="emojiOptions">
+        <span class="emoji-opt" data-emoji="✈️">✈️</span>
+        <span class="emoji-opt" data-emoji="🏥">🏥</span>
+        <span class="emoji-opt" data-emoji="🏠">🏠</span>
+        <span class="emoji-opt" data-emoji="📱">📱</span>
+        <span class="emoji-opt" data-emoji="🎓">🎓</span>
+        <span class="emoji-opt" data-emoji="🚗">🚗</span>
+        <span class="emoji-opt" data-emoji="💍">💍</span>
+        <span class="emoji-opt" data-emoji="🎮">🎮</span>
+        <span class="emoji-opt" data-emoji="🏋️">🏋️</span>
+        <span class="emoji-opt" data-emoji="🎨">🎨</span>
+        <span class="emoji-opt" data-emoji="💼">💼</span>
+        <span class="emoji-opt" data-emoji="🌴">🌴</span>
+        <span class="emoji-opt" data-emoji="🫙">🫙</span>
+        <span class="emoji-opt" data-emoji="⭐">⭐</span>
+        <span class="emoji-opt" data-emoji="🎁">🎁</span>
+        <span class="emoji-opt" data-emoji="🐾">🐾</span>
+      </div>
+
+      <!-- Color theme -->
+      <div class="form-group">
+        <label class="form-label">Jar Color</label>
+        <div class="color-options" id="colorOptions">
+          <div class="color-opt active" data-color="purple"  style="background:linear-gradient(135deg,#6366f1,#8b5cf6);" title="Indigo"></div>
+          <div class="color-opt"        data-color="emerald" style="background:linear-gradient(135deg,#10b981,#34d399);" title="Emerald"></div>
+          <div class="color-opt"        data-color="amber"   style="background:linear-gradient(135deg,#f59e0b,#fbbf24);" title="Amber"></div>
+          <div class="color-opt"        data-color="rose"    style="background:linear-gradient(135deg,#f43f5e,#fb7185);" title="Rose"></div>
+          <div class="color-opt"        data-color="sky"     style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);" title="Sky"></div>
+          <div class="color-opt"        data-color="orange"  style="background:linear-gradient(135deg,#ea580c,#fb923c);" title="Orange"></div>
+          <div class="color-opt"        data-color="pink"    style="background:linear-gradient(135deg,#db2777,#f472b6);" title="Pink"></div>
+          <div class="color-opt"        data-color="teal"    style="background:linear-gradient(135deg,#0d9488,#2dd4bf);" title="Teal"></div>
+        </div>
+        <input type="hidden" id="jarColor" value="purple">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="jarGoal">Savings Goal (₹)</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">🎯</span>
+          <input type="number" id="jarGoal" class="form-input" placeholder="e.g. 15000" min="1" step="0.01" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="jarDeposit">Initial Deposit (₹) <span style="font-weight:400;color:var(--text-muted);">optional</span></label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">💵</span>
+          <input type="number" id="jarDeposit" class="form-input" placeholder="How much to start with?" min="0" step="0.01" value="0">
+        </div>
+        <div style="font-size:0.77rem;color:var(--text-muted);margin-top:5px;">
+          Available to lock: <strong id="availableBalance">₹—</strong>
+        </div>
+      </div>
+
+      <div id="createMsg" style="display:none;margin-bottom:14px;padding:12px;border-radius:8px;font-size:0.85rem;"></div>
+
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn btn-outline" id="cancelCreate" style="flex:1;">Cancel</button>
+        <button type="submit" id="createBtn" class="btn btn-primary" style="flex:2;">🫙 Create Jar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════════════ TOP-UP MODAL ════════════════════════ -->
+<div id="topupModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-header">
+      <h2 id="topupTitle">💰 Top Up Jar</h2>
+      <button class="modal-close" id="closeTopupModal">✕</button>
+    </div>
+    <div id="topupJarPreview" style="margin-bottom:18px;"></div>
+    <form id="topupForm">
+      <input type="hidden" id="topupJarId">
+      <div class="form-group">
+        <label class="form-label" for="topupAmount">Amount (₹)</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">₹</span>
+          <input type="number" id="topupAmount" class="form-input" placeholder="How much to add?" min="1" step="0.01" required>
+        </div>
+        <div style="font-size:0.77rem;color:var(--text-muted);margin-top:5px;">
+          Still needed: <strong id="topupRemaining">₹—</strong> · Wallet: <strong id="topupWalletBal">₹—</strong>
+        </div>
+      </div>
+      <div id="topupMsg" style="display:none;margin-bottom:14px;padding:12px;border-radius:8px;font-size:0.85rem;"></div>
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn btn-outline" id="cancelTopup" style="flex:1;">Cancel</button>
+        <button type="submit" id="topupBtn" class="btn btn-primary" style="flex:2;">💰 Add to Jar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════════════ BREAK MODAL ════════════════════════ -->
+<div id="breakModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-header">
+      <h2 id="breakTitle">💔 Break Jar</h2>
+      <button class="modal-close" id="closeBreakModal">✕</button>
+    </div>
+    <input type="hidden" id="breakJarId">
+    <div id="breakWarning" class="break-warning"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button type="button" class="btn btn-outline" id="cancelBreak" style="flex:1;">Keep Saving</button>
+      <button type="button" id="confirmBreakBtn" class="btn btn-danger" style="flex:2;">💔 Break It</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script src="/js/app.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Jars Page Logic
+// ─────────────────────────────────────────────────────────────────────────────
+
+const THEME_GRADIENTS = {
+  purple:  "linear-gradient(135deg,#6366f1,#8b5cf6)",
+  emerald: "linear-gradient(135deg,#10b981,#34d399)",
+  amber:   "linear-gradient(135deg,#f59e0b,#fbbf24)",
+  rose:    "linear-gradient(135deg,#f43f5e,#fb7185)",
+  sky:     "linear-gradient(135deg,#0ea5e9,#38bdf8)",
+  orange:  "linear-gradient(135deg,#ea580c,#fb923c)",
+  pink:    "linear-gradient(135deg,#db2777,#f472b6)",
+  teal:    "linear-gradient(135deg,#0d9488,#2dd4bf)",
+};
+
+const THEME_LIQUID = {
+  purple:  ["#6366f180","#8b5cf680"],
+  emerald: ["#10b98180","#34d39980"],
+  amber:   ["#f59e0b80","#fbbf2480"],
+  rose:    ["#f43f5e80","#fb718580"],
+  sky:     ["#0ea5e980","#38bdf880"],
+  orange:  ["#ea580c80","#fb923c80"],
+  pink:    ["#db277780","#f472b680"],
+  teal:    ["#0d948880","#2dd4bf80"],
+};
+
+let allJars = [];
+let walletBalance = 0;
+
+// ── Main init ─────────────────────────────────────────────────────────────────
+(async () => {
+  const me = await Wallet.requireAuth();
+  if (!me) return;
+  Wallet.setActiveNav("jars");
+  Wallet.populateSidebar();
+  await loadJars();
+})();
+
+async function loadJars() {
+  const { ok, data } = await Wallet.apiFetch("/api/jars");
+  if (!ok) { showToast("Failed to load jars", "error"); return; }
+
+  allJars       = data.jars;
+  walletBalance = data.spendable;
+
+  document.getElementById("statJarCount").textContent  = data.jar_count;
+  document.getElementById("statTotalSaved").textContent = Wallet.formatCurrency(data.total_saved);
+  document.getElementById("statSpendable").textContent  = Wallet.formatCurrency(data.spendable);
+  document.getElementById("availableBalance").textContent = Wallet.formatCurrency(data.spendable);
+
+  renderJarGrid(allJars);
+}
+
+function renderJarGrid(jars) {
+  const grid = document.getElementById("jarGrid");
+  const empty = document.getElementById("emptyJars");
+
+  if (!jars.length) {
+    grid.innerHTML = "";
+    empty.style.display = "flex";
+    return;
+  }
+
+  empty.style.display = "none";
+  grid.innerHTML = jars.map(j => renderJarCard(j)).join("");
+
+  // Animate liquid fill after render
+  jars.forEach(j => animateLiquid(j.id, j.progress_pct));
+
+  // Attach event handlers
+  grid.querySelectorAll("[data-topup-id]").forEach(btn =>
+    btn.addEventListener("click", () => openTopup(btn.dataset.topupId))
+  );
+  grid.querySelectorAll("[data-break-id]").forEach(btn =>
+    btn.addEventListener("click", () => openBreak(btn.dataset.breakId))
+  );
+}
+
+function renderJarCard(j) {
+  const grad     = THEME_GRADIENTS[j.color_theme] || THEME_GRADIENTS.purple;
+  const pct      = j.progress_pct;
+  const complete = j.is_complete;
+
+  return `
+  <div class="jar-card fade-in" id="jarcard-${j.id}">
+    <div class="jar-card-header" style="background:${grad};">
+      <div class="jar-emoji">${j.emoji}</div>
+      ${complete ? '<div class="jar-complete-badge">🎉 Complete!</div>' : ''}
+    </div>
+
+    <div class="jar-body">
+      <h3 class="jar-name">${j.name}</h3>
+
+      <!-- Liquid Jar SVG -->
+      <div class="jar-visual-wrap">
+        <svg class="jar-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="jarClip-${j.id}">
+              <path d="M 15 20 Q 10 22 8 30 L 8 105 Q 8 115 20 115 L 80 115 Q 92 115 92 105 L 92 30 Q 90 22 85 20 Z"/>
+            </clipPath>
+            <linearGradient id="liquidGrad-${j.id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${(THEME_LIQUID[j.color_theme]||THEME_LIQUID.purple)[0]}"/>
+              <stop offset="100%" stop-color="${(THEME_LIQUID[j.color_theme]||THEME_LIQUID.purple)[1]}"/>
+            </linearGradient>
+          </defs>
+          <!-- Jar body outline -->
+          <path d="M 30 0 L 70 0 L 75 20 L 85 20 Q 92 22 92 30 L 92 105 Q 92 118 80 118 L 20 118 Q 8 118 8 105 L 8 30 Q 8 22 15 20 L 25 20 Z"
+                fill="#f8f9fb" stroke="#e8ecf1" stroke-width="2"/>
+          <!-- Liquid fill (animated via JS) -->
+          <rect id="liquid-${j.id}"
+                x="8" y="118" width="84" height="0"
+                fill="url(#liquidGrad-${j.id})"
+                clip-path="url(#jarClip-${j.id})"/>
+          <!-- Shine gloss -->
+          <path d="M 20 30 Q 22 50 20 70" stroke="rgba(255,255,255,0.5)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <!-- Jar lid -->
+          <rect x="22" y="-4" width="56" height="10" rx="4" fill="#d1d5db"/>
+          <rect x="26" y="-6" width="48" height="8" rx="3" fill="#e5e7eb"/>
+        </svg>
+        <div class="jar-pct-label ${complete ? 'complete' : ''}">${pct}%</div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="jar-progress-wrap">
+        <div class="jar-progress-bar">
+          <div class="jar-progress-fill" style="width:${pct}%;background:${grad};"></div>
+        </div>
+      </div>
+
+      <!-- Amounts -->
+      <div class="jar-amounts">
+        <div>
+          <div class="jar-amount-label">Saved</div>
+          <div class="jar-amount-val saved">${Wallet.formatCurrency(j.saved_amount)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="jar-amount-label">Goal</div>
+          <div class="jar-amount-val goal" style="background:${grad};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${Wallet.formatCurrency(j.goal_amount)}</div>
+        </div>
+      </div>
+
+      ${j.auto_save_amount > 0 ? `
+      <div class="jar-autosave-badge">
+        🔄 Auto-save ${Wallet.formatCurrency(j.auto_save_amount)} · ${j.auto_save_frequency}
+      </div>` : ''}
+
+      <!-- Actions -->
+      <div class="jar-actions">
+        ${!complete ? `<button class="btn btn-primary btn-sm" data-topup-id="${j.id}" style="flex:1;">💰 Top Up</button>` : ''}
+        <button class="btn btn-danger btn-sm" data-break-id="${j.id}" style="flex:1;">
+          ${complete ? '🎉 Collect' : '💔 Break'}
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Liquid fill animation ─────────────────────────────────────────────────────
+function animateLiquid(jarId, targetPct) {
+  const el = document.getElementById(`liquid-${jarId}`);
+  if (!el) return;
+
+  const maxH   = 88;   // max fill height in SVG units (jar body height)
+  const baseY  = 118;  // bottom Y of jar
+  const target = (maxH * targetPct) / 100;
+
+  let current = 0;
+  const step  = target / 40;
+
+  const interval = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.setAttribute("y",      String(baseY - current));
+    el.setAttribute("height", String(current));
+    if (current >= target) clearInterval(interval);
+  }, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATE JAR
+// ─────────────────────────────────────────────────────────────────────────────
+document.getElementById("openCreateModal").addEventListener("click", () => {
+  document.getElementById("createModal").style.display = "flex";
+  document.getElementById("availableBalance").textContent = Wallet.formatCurrency(walletBalance);
+  document.getElementById("createMsg").style.display = "none";
+});
+document.getElementById("closeCreateModal").addEventListener("click", closeCreate);
+document.getElementById("cancelCreate").addEventListener("click", closeCreate);
+function closeCreate() { document.getElementById("createModal").style.display = "none"; }
+
+// Emoji picker
+document.querySelectorAll(".emoji-opt").forEach(opt => {
+  opt.addEventListener("click", () => {
+    document.querySelectorAll(".emoji-opt").forEach(o => o.classList.remove("selected"));
+    opt.classList.add("selected");
+    document.getElementById("emojiDisplay").textContent = opt.dataset.emoji;
+    document.getElementById("jarEmoji").value = opt.dataset.emoji;
+  });
+});
+
+// Color picker
+document.querySelectorAll(".color-opt").forEach(opt => {
+  opt.addEventListener("click", () => {
+    document.querySelectorAll(".color-opt").forEach(o => o.classList.remove("active"));
+    opt.classList.add("active");
+    document.getElementById("jarColor").value = opt.dataset.color;
+  });
+});
+
+document.getElementById("createJarForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn  = document.getElementById("createBtn");
+  const msg  = document.getElementById("createMsg");
+
+  const payload = {
+    name:               document.getElementById("jarName").value.trim(),
+    emoji:              document.getElementById("jarEmoji").value,
+    goal_amount:        parseFloat(document.getElementById("jarGoal").value),
+    initial_deposit:    parseFloat(document.getElementById("jarDeposit").value) || 0,
+    color_theme:        document.getElementById("jarColor").value,
+  };
+
+  msg.style.display = "none";
+  Wallet.btnLoading(btn, true);
+
+  const { ok, data } = await Wallet.apiFetch("/api/jars", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  Wallet.btnLoading(btn, false, "🫙 Create Jar");
+
+  if (ok) {
+    showToast(data.message, "success");
+    closeCreate();
+    document.getElementById("createJarForm").reset();
+    document.getElementById("emojiDisplay").textContent = "🫙";
+    document.getElementById("jarEmoji").value = "🫙";
+    await loadJars();
+  } else {
+    msg.style.cssText = "display:block;background:var(--red-light);border:1px solid #fecaca;border-radius:8px;padding:12px;font-size:0.85rem;color:var(--red);margin-bottom:14px;";
+    msg.textContent = data.error || "Failed to create jar";
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOP-UP JAR
+// ─────────────────────────────────────────────────────────────────────────────
+function openTopup(jarId) {
+  const jar = allJars.find(j => j.id === jarId);
+  if (!jar) return;
+
+  document.getElementById("topupJarId").value    = jarId;
+  document.getElementById("topupTitle").textContent = `💰 Top Up — ${jar.emoji} ${jar.name}`;
+  document.getElementById("topupRemaining").textContent = Wallet.formatCurrency(jar.remaining);
+  document.getElementById("topupWalletBal").textContent = Wallet.formatCurrency(walletBalance);
+  document.getElementById("topupMsg").style.display = "none";
+  document.getElementById("topupAmount").value = "";
+
+  const grad = THEME_GRADIENTS[jar.color_theme] || THEME_GRADIENTS.purple;
+  document.getElementById("topupJarPreview").innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg-primary);border-radius:12px;">
+      <div style="width:48px;height:48px;border-radius:12px;background:${grad};display:flex;align-items:center;justify-content:center;font-size:1.5rem;">${jar.emoji}</div>
+      <div>
+        <div style="font-weight:600;">${jar.name}</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">${jar.progress_pct}% complete · ${Wallet.formatCurrency(jar.saved_amount)} of ${Wallet.formatCurrency(jar.goal_amount)}</div>
+      </div>
+    </div>`;
+
+  document.getElementById("topupModal").style.display = "flex";
+}
+
+document.getElementById("closeTopupModal").addEventListener("click", closeTopup);
+document.getElementById("cancelTopup").addEventListener("click", closeTopup);
+function closeTopup() { document.getElementById("topupModal").style.display = "none"; }
+
+document.getElementById("topupForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn    = document.getElementById("topupBtn");
+  const msg    = document.getElementById("topupMsg");
+  const jarId  = document.getElementById("topupJarId").value;
+  const amount = parseFloat(document.getElementById("topupAmount").value);
+
+  msg.style.display = "none";
+  Wallet.btnLoading(btn, true);
+
+  const { ok, data } = await Wallet.apiFetch(`/api/jars/${jarId}/topup`, {
+    method: "POST",
+    body: JSON.stringify({ amount }),
+  });
+
+  Wallet.btnLoading(btn, false, "💰 Add to Jar");
+
+  if (ok) {
+    showToast(data.message, "success");
+    closeTopup();
+    await loadJars();
+  } else {
+    msg.style.cssText = "display:block;background:var(--red-light);border:1px solid #fecaca;border-radius:8px;padding:12px;font-size:0.85rem;color:var(--red);margin-bottom:14px;";
+    msg.textContent = data.error || "Top-up failed";
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BREAK JAR
+// ─────────────────────────────────────────────────────────────────────────────
+function openBreak(jarId) {
+  const jar = allJars.find(j => j.id === jarId);
+  if (!jar) return;
+
+  document.getElementById("breakJarId").value = jarId;
+  document.getElementById("breakTitle").textContent = jar.is_complete
+    ? `🎉 Collect — ${jar.emoji} ${jar.name}`
+    : `💔 Break — ${jar.emoji} ${jar.name}`;
+
+  const warning = jar.is_complete
+    ? `<div class="break-complete">
+        <div style="font-size:2.5rem;margin-bottom:10px;">🎉</div>
+        <strong>Goal Achieved!</strong>
+        <p>Congratulations! Your jar is full. Collect <strong>${Wallet.formatCurrency(jar.saved_amount)}</strong> back to your wallet.</p>
+      </div>`
+    : `<div class="break-incomplete">
+        <div style="font-size:2.5rem;margin-bottom:10px;">💔</div>
+        <strong>Break early?</strong>
+        <p>Your jar is only <strong>${jar.progress_pct}%</strong> full (saved ${Wallet.formatCurrency(jar.saved_amount)}).</p>
+        <p style="margin-top:8px;color:var(--red);">⚠️ <strong>2% early-break fee</strong> applies — you'll get back <strong>${Wallet.formatCurrency(jar.saved_amount * 0.98)}</strong>.</p>
+      </div>`;
+
+  document.getElementById("breakWarning").innerHTML = warning;
+
+  const confirmBtn = document.getElementById("confirmBreakBtn");
+  confirmBtn.textContent = jar.is_complete ? "🎉 Collect Money" : "💔 Break It";
+  confirmBtn.className   = jar.is_complete ? "btn btn-success" : "btn btn-danger";
+
+  document.getElementById("breakModal").style.display = "flex";
+}
+
+document.getElementById("closeBreakModal").addEventListener("click", closeBreak);
+document.getElementById("cancelBreak").addEventListener("click", closeBreak);
+function closeBreak() { document.getElementById("breakModal").style.display = "none"; }
+
+document.getElementById("confirmBreakBtn").addEventListener("click", async () => {
+  const jarId = document.getElementById("breakJarId").value;
+  const btn   = document.getElementById("confirmBreakBtn");
+  const orig  = btn.textContent;
+
+  Wallet.btnLoading(btn, true);
+
+  const { ok, data } = await Wallet.apiFetch(`/api/jars/${jarId}/break`, { method: "POST" });
+
+  Wallet.btnLoading(btn, false, orig);
+
+  if (ok) {
+    showToast(data.message, data.goal_was_met ? "success" : "info");
+    closeBreak();
+    await loadJars();
+  } else {
+    showToast(data.error || "Failed to break jar", "error");
+  }
+});
+
+// ── Close modals on overlay click ─────────────────────────────────────────────
+["createModal","topupModal","breakModal"].forEach(id => {
+  document.getElementById(id).addEventListener("click", function(e) {
+    if (e.target === this) this.style.display = "none";
+  });
+});
+</script>
+</body>
+</html>

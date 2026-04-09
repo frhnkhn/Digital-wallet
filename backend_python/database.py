@@ -77,6 +77,25 @@ def init_db():
         )
     """)
 
+    # ── Savings Jars table ───────────────────────────────────────────────────
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS savings_jars (
+            id                   TEXT PRIMARY KEY,
+            owner_id             TEXT NOT NULL,
+            wallet_id            TEXT NOT NULL,
+            name                 TEXT NOT NULL,
+            emoji                TEXT NOT NULL DEFAULT '🫙',
+            goal_amount          REAL NOT NULL,
+            saved_amount         REAL NOT NULL DEFAULT 0.0,
+            color_theme          TEXT NOT NULL DEFAULT 'purple',
+            is_complete          INTEGER NOT NULL DEFAULT 0,
+            auto_save_amount     REAL NOT NULL DEFAULT 0.0,
+            auto_save_frequency  TEXT NOT NULL DEFAULT 'none',
+            created_at           TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (owner_id) REFERENCES users(id)
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -249,3 +268,77 @@ def get_db_stats() -> dict:
         "total_money":       round(total_money, 2),
         "total_volume":      round(total_volume, 2),
     }
+
+
+# ── Savings Jars helpers ──────────────────────────────────────────────────────
+
+def create_jar(jar_id: str, owner_id: str, wallet_id: str, name: str,
+               emoji: str, goal_amount: float, initial_deposit: float,
+               color_theme: str, auto_save_amount: float = 0.0,
+               auto_save_frequency: str = 'none') -> bool:
+    try:
+        conn = get_connection()
+        conn.execute("""
+            INSERT INTO savings_jars
+                (id, owner_id, wallet_id, name, emoji, goal_amount, saved_amount,
+                 color_theme, auto_save_amount, auto_save_frequency)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (jar_id, owner_id, wallet_id, name, emoji, goal_amount,
+               initial_deposit, color_theme, auto_save_amount, auto_save_frequency))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+
+def get_jars_for_user(owner_id: str) -> list:
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM savings_jars WHERE owner_id = ? ORDER BY created_at DESC",
+        (owner_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_jar(jar_id: str) -> sqlite3.Row | None:
+    conn = get_connection()
+    row  = conn.execute("SELECT * FROM savings_jars WHERE id = ?", (jar_id,)).fetchone()
+    conn.close()
+    return row
+
+
+def update_jar_balance(jar_id: str, new_saved_amount: float) -> bool:
+    is_complete = 1  # will be checked by caller
+    conn = get_connection()
+    conn.execute(
+        "UPDATE savings_jars SET saved_amount = ? WHERE id = ?",
+        (new_saved_amount, jar_id)
+    )
+    # Mark complete if goal reached
+    conn.execute("""
+        UPDATE savings_jars SET is_complete = 1
+        WHERE id = ? AND saved_amount >= goal_amount
+    """, (jar_id,))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def delete_jar(jar_id: str) -> bool:
+    conn = get_connection()
+    conn.execute("DELETE FROM savings_jars WHERE id = ?", (jar_id,))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def get_total_jars_saved(owner_id: str) -> float:
+    conn = get_connection()
+    result = conn.execute(
+        "SELECT COALESCE(SUM(saved_amount), 0) FROM savings_jars WHERE owner_id = ?",
+        (owner_id,)
+    ).fetchone()[0]
+    conn.close()
+    return round(result, 2)

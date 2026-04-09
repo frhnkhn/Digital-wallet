@@ -1,0 +1,320 @@
+/**
+ * health.css — Financial Health Score Page
+ * Animated arc gauge, score cards, component breakdown
+ */
+
+/* ── Hero Score Section ──────────────────────────────────────────────────── */
+.health-hero {
+  display: flex;
+  gap: 28px;
+  align-items: stretch;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+/* ── Gauge Card ──────────────────────────────────────────────────────────── */
+.gauge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 300px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.gauge-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; left: 50%;
+  transform: translateX(-50%);
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* SVG Arc Gauge */
+.gauge-wrap {
+  position: relative;
+  width: 200px;
+  height: 120px;
+  margin-bottom: 12px;
+}
+
+.gauge-svg {
+  width: 200px;
+  height: 120px;
+  overflow: visible;
+}
+
+/* Track arc */
+.gauge-track {
+  fill: none;
+  stroke: var(--bg-primary);
+  stroke-width: 16;
+  stroke-linecap: round;
+}
+
+/* Coloured fill arc */
+.gauge-fill {
+  fill: none;
+  stroke-width: 16;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              stroke 0.6s ease;
+  transform-origin: center;
+}
+
+/* Score badge in centre of gauge */
+.gauge-score-wrap {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.gauge-score-num {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  transition: color 0.6s ease;
+}
+
+.gauge-score-max {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Grade badge */
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 16px;
+  letter-spacing: 0.03em;
+  transition: all 0.5s ease;
+}
+
+/* Score descriptor text */
+.score-descriptor {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* ── Score Summary Tiles ─────────────────────────────────────────────────── */
+.health-meta-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  min-width: 220px;
+}
+
+.meta-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  transition: all 0.2s ease;
+}
+
+.meta-tile:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.meta-tile .tile-icon {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.meta-tile .tile-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.meta-tile .tile-lbl {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 3px;
+}
+
+/* ── Components Breakdown ────────────────────────────────────────────────── */
+.components-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.component-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.component-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateX(3px);
+}
+
+.comp-icon-wrap {
+  width: 46px; height: 46px;
+  border-radius: 12px;
+  background: var(--bg-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.comp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comp-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.comp-detail {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Component progress bar */
+.comp-bar-wrap {
+  height: 7px;
+  background: var(--bg-primary);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.comp-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  width: 0%;
+  transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.comp-score {
+  font-size: 0.95rem;
+  font-weight: 800;
+  min-width: 56px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.comp-score .comp-max {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ── Tip Section ─────────────────────────────────────────────────────────── */
+.tips-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+
+.tips-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tip-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tip-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.tip-text {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* ── Shimmer loading ─────────────────────────────────────────────────────── */
+.health-shimmer {
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--bg-primary) 25%, #e8ecf4 50%, var(--bg-primary) 75%);
+  background-size: 300% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .health-hero {
+    flex-direction: column;
+  }
+  .gauge-card {
+    flex: 1;
+    width: 100%;
+  }
+  .health-meta-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .component-card {
+    flex-wrap: wrap;
+  }
+}

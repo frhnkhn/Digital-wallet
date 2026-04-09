@@ -47,13 +47,17 @@ else:
     print("[app] ⚠️  Shared libs not found – running in Python-only mode (compile .so files for full features)")
 
 # ── Register Blueprints (API Routes) ─────────────────────────────────────────
-from auth         import auth_bp
+from auth          import auth_bp
 from wallet_routes import wallet_bp
 from admin_routes  import admin_bp
+from jars_routes   import jars_bp
+from health_routes import health_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(wallet_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(jars_bp)
+app.register_blueprint(health_bp)
 
 # ── Serve Frontend HTML pages ─────────────────────────────────────────────────
 _FRONTEND = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
